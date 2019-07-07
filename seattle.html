@@ -96,6 +96,9 @@
   </main>
 
   <script>
+
+  // 1. heatmap
+  // 2. add data to chart.
     $(window).ready(function() {
       $('.loader').fadeOut("slow");
     });
@@ -520,6 +523,13 @@
       if (mymap.hasLayer(mGroup)) {
         mGroup.clearLayers();
         mLayers[d.x].addTo(mGroup);
+
+        $.each(mLayers[d.x]._layers, function(i,feature){
+          a = 3;
+        })
+
+
+
       } else {
         mGroup.clearLayers();
       }
