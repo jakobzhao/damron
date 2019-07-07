@@ -1,0 +1,99 @@
+.leaflet-control-layers {
+  width: 220px;
+}
+
+#flow, #prep {
+  min-height: 150px;
+  min-width: 700px
+}
+
+#heatmap_legend {
+  position: absolute;
+  line-height: 12px;
+  padding: 3px;
+  /* text-align: center; */
+}
+
+#heatmap_legend i {
+  width: 0.5px;
+  height: 12px;
+  float: left;
+}
+
+.flow_gauge, .rain_gauge {
+  color: red;
+  opacity: 0.8;
+  text-shadow: 1px 1px 1px grey;
+}
+
+.compliant {
+  color: yellow;
+  opacity: 0.8;
+  text-shadow: 1px 1px 1px grey;
+}
+
+.f56 {
+  color: blue;
+  opacity: 0.8;
+  text-shadow: 1px 1px 1px white;
+}
+
+.fd {
+  color: teal;
+  opacity: 0.8;
+  text-shadow: 1px 1px 1px white;
+}
+
+.dpr {
+  color: grey;
+  opacity: 0.8;
+  text-shadow: 1px 1px 1px white;
+}
+
+.mtr {
+  color: #581d00;
+  opacity: 0.8;
+  text-shadow: 1px 1px 1px white;
+}
+
+#upper_panel {
+  position: absolute;
+  z-index: 1010;
+  left: 30px;
+  top: 3vh;
+  /* width: 268px; */
+}
+
+#timeline-chart .c3-axis-y .tick {
+  display: none;
+}
+
+#timeline-chart {
+  position: relative;
+  top: -20px;
+}
+
+#daterange {
+  position: relative;
+  min-width: 500px;
+  left: 30px;
+  background: rgba(225, 225, 225, 0);
+  text-align: left;
+  color: black;
+    font-family: 'Oswald', sans-serif;
+  /* font-family: 'Titillium Web', sans-serif; */
+  font-size: 24px;
+}
+
+input[type=text] {
+  border: 2px solid rgba(225, 225, 225, 0);
+  -webkit-border-radius: 5px;
+  border-radius: 5px;
+}
+
+input[type=text]:focus {
+  /* border:2px solid #ccc; */
+  font-weight: bold;
+  text-shadow: 0 0 0.1em white, 0 0 0.1em white,
+    0 0 0.1em white, 0 0 0.1em white, 0 0 0.1em;
+}
