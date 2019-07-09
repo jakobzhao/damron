@@ -15,6 +15,7 @@
   <link href="https://cdnjs.cloudflare.com/ajax/libs/c3/0.6.14/c3.min.css" rel="stylesheet">
   <link rel="stylesheet" href="css/main.css">
   <link rel="stylesheet" href="css/seattle.css">
+  <!-- <link rel="stylesheet" href="css/jqcloud.css"> -->
   <link rel="icon" href="img/favicon.ico" type="image/x-icon" />
   <script src="https://unpkg.com/d3@5/dist/d3.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/c3/0.6.14/c3.min.js"></script>
@@ -26,6 +27,7 @@
   <script src="https://code.jquery.com/jquery-3.3.1.min.js"></script>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/popper.js/1.14.7/umd/popper.min.js"></script>
   <script src="https://stackpath.bootstrapcdn.com/bootstrap/4.3.1/js/bootstrap.min.js"></script>
+  <!-- <script src="js/jqcloud.js"></script> -->
 </head>
 
 <body>
@@ -77,7 +79,7 @@
       <div class="container-fluid d-flex justify-content-between">
         <a href="index.html" class="navbar-brand d-flex align-items-center">
           <img src="img/logo.png" class="img-responsive" height="30"></img>
-          <strong>&nbsp;&nbsp;&nbsp;&nbsp;Damron Guide: Seattle</strong>
+          <strong>&nbsp;&nbsp;Damron Guide</strong>
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -96,11 +98,20 @@
           <input type="checkbox">
           <span class="slider round"></span>
         </label>
+        <div id="hmLegendContainer"></div>
       </div>
     </div>
 
     <div id="info" class="d-flex flex-column">
-      <h4><i class="fas fa-users pop"></i> Seattle </h4>
+      <h4 class="rainbow">Seattle</h4>
+      <p id="caseDesc">How do changes in precipitation impact stream flow,
+        storage, and flooding in the Fanno Creek subbasin? This map visualizes
+        data including stream flow, precipitation, and flooding complaint calls
+        through interactive charts and map elements.
+      </p>
+      <div id="cloud"></div>
+      <div id="fChart"></div>
+      <div id="tChart"></div>
 
     </div>
     <div id="map"></div>
@@ -113,6 +124,35 @@
       $('.loader').fadeOut("slow");
     });
 
+
+
+    function wordFrequency(txt, freq) {
+
+    	// a regular expression to define the symbols to seperate the words
+        var wordArray = txt.split(/[ .?!,*'"”“]/);
+        //var wordArray = txt.split(" ");
+        var newArray = [], filteredArray = [], wordObj;
+    	// calculate the frequency of each unique terms from the text.
+        wordArray.forEach(function (word) {
+            wordObj = newArray.filter(function (w){
+                return w.text == word.toLowerCase();
+            });
+            if (wordObj.length) {
+                wordObj[0].weight += 1;
+            } else {
+                newArray.push({text: word, weight: 1});
+            }
+        });
+
+        var words = ["", "that", "this", "we", "needs", "I", "you", "he", "she", "and", "be", "are", "is", "was", "were", "Could", "Would", "of", "it", "with", "A", "s", "t", "with", "of", "to", "the", "for", "in", "not", ",", ")", "&", "our", "more", "people", "at", "We", "_", "our", "so", "throughout", "5", "maybe", "if", "use", "by", "as", "all", "4", "survey", "The", "on", "a", "on", "lots", "The", "-", "All", "but", "can", "up", "or", "need", "like", "will", "should", "way", "its", "do", "make", "between", "null", "many", "/", "want", "what", "It", "an", "g", "It", "don", "re", "think", "30", "lot", "about", "m", "re", "get", "good", "must",  "-", "them", "had", "take", "out", "etc", "has", "would", "20", "no", "_", "around", "how", "In", "city", '"',"“", "”", "am", "i", "they", "from", "I've", "his", "who", "my", "one", "23", "don't", "W", "C", "10", "than", "their", "me", "have", "into", "other", "only", "when", "because", "rather", "being", "then", "himself", "him", "don’t", "own", "two", "may", "group", "which", "just", "same", "there", "too", "also", "less", "asks", "let", "itself", "day", "example", "another", "say", "myself", "cannot", "self", "bad", "such", "part", "after", "much", "does", "both", "very", "come", "new", "very", "often", "end", "isn’t", "some", "much", "said", "your"];
+    	//disinclude the word larger than the lowerst frequency as well as not in the commonly used terms.
+        newArray.filter(function(word){
+            if (!words.includes(word.text) && word.weight > freq) {
+                filteredArray.push(word);
+            }
+        });
+        return filteredArray;
+    }
 
     var mymap = L.map('map', {
       center: [47.609, -122.342],
@@ -143,33 +183,34 @@
     var mGroup = L.layerGroup().addTo(mymap);
     var wGroup = L.layerGroup().addTo(mymap);
     var mLayers, wLayers;
-    var chart;
+    var chart, fChart;
     var heatmapFlag = false;
+    var colorscheme = chroma.scale('OrRd').colors(10).reverse(); //colorscheme = chroma.scale('OrRd').colors(5);
 
     var mHeatmap = L.heatLayer([], {
       radius: 60,
       blur: 50,
-       gradient: {
-         0.45: "rgb(0,0,255)",
-         0.55: "rgb(0,255,255)",
-         0.65: "rgb(0,255,0)",
-         0.95: "rgb(255,255,0)",
-         1.0:  "rgb(255,0,0)"
-       }
-    }).addTo(mymap);;
-
-
-    var wHeatmap = L.heatLayer([], {
-      radius: 60,
-      blur:50,
       gradient: {
         0.45: "rgb(0,0,255)",
         0.55: "rgb(0,255,255)",
         0.65: "rgb(0,255,0)",
         0.95: "rgb(255,255,0)",
-        1.0:  "rgb(255,0,0)"
+        1.0: "rgb(255,0,0)"
       }
-    }).addTo(mymap);;
+    }).addTo(mymap);
+
+
+    var wHeatmap = L.heatLayer([], {
+      radius: 60,
+      blur: 50,
+      gradient: {
+        0.45: "rgb(0,0,255)",
+        0.55: "rgb(0,255,255)",
+        0.65: "rgb(0,255,0)",
+        0.95: "rgb(255,255,0)",
+        1.0: "rgb(255,0,0)"
+      }
+    }).addTo(mymap);
 
 
     var zoningColors = chroma.scale('Set2').mode('lch').colors(11);
@@ -422,8 +463,86 @@
         bindto: "#timeline-chart"
       });
 
-      $($($("#timeline-chart svg").children()[1]).children()[6]).hide();
 
+      fChart = c3.generate({
+        size: {
+          height: 200
+        },
+        data: {
+          x: 'x',
+          columns: [
+            ['x', '$', '18+', 'Weelchair', 'Private CI'],
+            ['Men', 13, 20, 10, 30],
+            ['Women', 19, 10, 14, 20],
+          ],
+          groups: [
+            ['Men', 'Women']
+          ],
+          colors: {
+            "Women": 'rgba(255, 0, 255, .6)',
+            "Men": 'rgba(0, 40, 255, .6)'
+          },
+          type: 'bar'
+        },
+        axis: {
+          x: {
+            type: 'category' // this needed to load string x value
+          },
+          y: {
+            label: {
+              text: '# of places',
+              position: 'outer-middle'
+            }
+          }
+        },
+        legend: {
+          show: false
+        },
+        bindto: "#fChart"
+      });
+
+
+      tChart = c3.generate({
+        size: {
+          height: 200
+        },
+        data: {
+          x: 'x',
+          columns: [
+            ['x', 'Restaurants', 'Bar', 'Accommodation', 'Erotica', 'Cruisy Area'],
+            ['Men', 15, 13,  15, 30, 20],
+            ['Women', 30, 12, 20,  20, 14],
+          ],
+          groups: [
+            ['Men', 'Women']
+          ],
+          colors: {
+            "Women": 'rgba(255, 0, 255, .6)',
+            "Men": 'rgba(0, 40, 255, .6)'
+          },
+          type: 'bar'
+        },
+        axis: {
+          x: {
+            type: 'category' // this needed to load string x value
+          },
+          y: {
+            label: {
+              text: '# of places',
+              position: 'outer-middle'
+            }
+          }
+        },
+        // legend: {
+        //   position: 'inset',
+        //   inset: {
+        //     anchor: "top-left"
+        //   },
+        // },
+        bindto: "#tChart"
+      });
+
+      $($($("#timeline-chart svg").children()[1]).children()[6]).hide();
 
 
 
@@ -432,20 +551,42 @@
 
           chart.load({
             columns: [wPop]
+          });
 
-          })
+          fChart.load({
+            columns: [
+              ["Women", Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1]
+            ]
+          });
 
+          tChart.load({
+            columns: [
+              ["Women", Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1]
+            ]
+          });
         }
 
         if (eventlayer.layer == mGroup) {
           chart.load({
             columns: [mPop]
-          })
+          });
 
+          fChart.load({
+            columns: [
+              ["Men", Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1]
+            ]
+          });
+
+          tChart.load({
+            columns: [
+              ["Men", Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1]
+            ]
+          });
         }
 
-
       });
+
+
 
 
       mymap.on('overlayremove', function(eventlayer) {
@@ -453,6 +594,13 @@
 
           chart.unload({
             ids: ['# Women']
+          });
+
+          fChart.unload({
+            ids: ['Women']
+          });
+          tChart.unload({
+            ids: ['Women']
           });
 
         }
@@ -463,74 +611,123 @@
             ids: ['# Men']
           });
 
+          fChart.unload({
+            ids: ['Men']
+          });
+
+          tChart.unload({
+            ids: ['Men']
+          });
 
         }
 
       });
 
-
-
     });
+
+
 
 
 
 
     $(".leaflet-control-attribution")
       .css("bottom", "60px")
-      .css("font-size", "14px")
+      // .css("font-size", "14px")
       .css("background-color", "transparent")
       .html("<a class='rainbow' href='https://geography.washington.edu'>Supported by Geography @ University of Washington</a>");
-
 
 
     $("#hmSwitcher input").on("click", function() {
       if ($("#hmSwitcher input:checked").val() === "on") {
         heatmapFlag = true;
+        var colors = chroma.scale('Spectral').domain([0, 50]).colors(50); //colors = chroma.scale('OrRd').colors(5);
+        $("#hmLegendContainer").append("<div id='hmLegend'> </div>")
+        for (var j = 0; j < colors.length; j++) {
+          $("#hmLegend").append("<i style='background: " + colors[j] + " ; opacity:0.9'></i>");
+        }
+        $("#hmLegend").parent().append("<span>more</span>");
+        $("#hmLegend").parent().append("&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; <span>less</span>");
+
       } else {
         heatmapFlag = false;
+        $("#hmLegendContainer").empty();
+
       }
     });
-
-
-
-
 
 
     function update(d) {
       $("#year").text(d.x);
 
+      // $("#cloud").jQCloud([], {
+      //   colors: colorscheme,
+      //   autoResize: true,
+      //   delay:5,
+      //   shape: 'rectangular',
+      //   fontSize: {
+      //     from: 0.06,
+      //     to: 0.01
+      //   }
+      // });
+
+
+
       mGroup.clearLayers();
       wGroup.clearLayers();
       mHeatmap.setLatLngs([]);
       wHeatmap.setLatLngs([]);
-      // mHeatmap.setOptions({
-      //   radius: 15,
-      //   blur: 20
-      // });
+
+      // var texts = "";
 
       if (mymap.hasLayer(mGroup)) {
         if (!heatmapFlag) {
           mLayers[d.x].addTo(mGroup);
         } else {
-        //  mHeatmap.setLatLngs([]);
           $.each(mLayers[d.x]._layers, function(i, d) {
-            //console.log(i);
-
             mHeatmap.addLatLng(new L.latLng(d.feature.geometry.coordinates[1], d.feature.geometry.coordinates[0]));
           });
-          // mHeatmap.addTo(mGroup);
         }
+
+
+        // $.each(mLayers[d.x]._layers, function(i, d) {
+        //   texts += d.feature.properties.Name + " ";
+        // });
+
+        fChart.load({
+          columns: [
+            ["Men", Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1]
+          ]
+        });
+
+
+        tChart.load({
+          columns: [
+            ["Men", Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1]
+          ]
+        });
+
+
 
       }
 
 
+
       if (mymap.hasLayer(wGroup)) {
         // wGroup.clearLayers();
-        if (d.x == 1965 || d.x == 1975 || d.x == 1983) {} else {
+        if (d.x == 1965 || d.x == 1975 || d.x == 1983) {
+          fChart.load({
+            columns: [
+              ["Women", 0, 0, 0, 0]
+            ]
+          });
 
+          tChart.load({
+            columns: [
+              ["Women", 0, 0, 0, 0, 0]
+            ]
+          });
 
-
-
+        } else {
 
           if (!heatmapFlag) {
             wLayers[d.x].addTo(wGroup);
@@ -540,25 +737,42 @@
             });
           }
 
+          // $.each(wLayers[d.x]._layers, function(i, d) {
+          //   texts += d.feature.properties.Name + " ";
+          // });
+          fChart.load({
+            columns: [
+              ["Women", Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1]
+            ]
+          });
+
+
+          tChart.load({
+            columns: [
+              ["Women", Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1, Math.floor(Math.random() * 25) + 1]
+            ]
+          });
 
         }
 
 
-
-
-
-
-
-
-
-
-
-
-
-
-
-
       }
+
+
+      // var  frequencyList = wordFrequency(texts, 3);
+      //
+      //
+      // $("#cloud").jQCloud(frequencyList, {
+      //   colors: colorscheme,
+      //   autoResize: true,
+      //   delay:5,
+      //   shape: 'rectangular',
+      //   fontSize: {
+      //     from: 0.06,
+      //     to: 0.01
+      //   }
+      // });
+
 
     }
   </script>
