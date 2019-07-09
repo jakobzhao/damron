@@ -35,10 +35,14 @@
         <div class="row">
           <div class="col-sm-8 col-md-7 py-4">
             <h4 class="text-white">About</h4>
-            <p class="text-muted">This website utilizes web geovisualization tools to
-              visualize XXXX. Each application contains interactive map
-              elements and charts. Explore the categories below to
-              to learn more.</p>
+            <p class="text-muted">This website utilizes online maps to
+              visually explore Damron’s Travel Guide.</p>
+
+            <p class="text-muted">The guidebook’s author, Bob Damron, gave gay readers hope by fleshing out worlds that would’ve otherwise remained unknowable. His list confirmed that a gay America existed and that within this quasi-nation, many
+              smaller gay Americas proliferated. Each one was bound by unique affinities whose siren songs went muffled. With tact, Damron amplified these calls. His guidebook told where to find doorways flowing towards danger and joyful possibility.
+              It pinpointed thresholds leading to family, community, sex, and love.</p>
+
+
           </div>
           <div class="col-sm-4 offset-md-1 py-4">
             <h4 class="text-white">Contact</h4>
@@ -73,7 +77,7 @@
       <div class="container-fluid d-flex justify-content-between">
         <a href="index.html" class="navbar-brand d-flex align-items-center">
           <img src="img/logo.png" class="img-responsive" height="30"></img>
-          <strong class="rainbow">&nbsp;&nbsp;&nbsp;&nbsp;Damron Guide: Seattle</strong>
+          <strong>&nbsp;&nbsp;&nbsp;&nbsp;Damron Guide: Seattle</strong>
         </a>
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
@@ -84,8 +88,15 @@
   <main>
     <div class="loader"></div>
     <div id="upper_panel" class="d-flex align-items-start flex-column">
-      <span id="year">1965</span>
+      <span id="year">2012</span>
       <div id="timeline-chart"></div>
+      <div id="mapToggle" class="col-md-5 align-items-center">
+        <span id="mapType">Heatmap</span>
+        <label id="hmSwitcher" class="switch">
+          <input type="checkbox">
+          <span class="slider round"></span>
+        </label>
+      </div>
     </div>
 
     <div id="info" class="d-flex flex-column">
@@ -96,9 +107,8 @@
   </main>
 
   <script>
-
-  // 1. heatmap
-  // 2. add data to chart.
+    // 1. heatmap
+    // 2. add data to chart.
     $(window).ready(function() {
       $('.loader').fadeOut("slow");
     });
@@ -118,13 +128,13 @@
 
 
     // var dark = L.tileLayer('http://{s}.basemaps.cartocdn.com/dark_all/{z}/{x}/{y}@2x.png').addTo(mymap);
-    var gray = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png').addTo(mymap);
+    var grayscale = L.tileLayer('http://{s}.basemaps.cartocdn.com/light_nolabels/{z}/{x}/{y}@2x.png').addTo(mymap);
     var streets = L.tileLayer('http://{s}.basemaps.cartocdn.com/rastertiles/voyager_nolabels/{z}/{x}/{y}@2x.png');
-    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}');
+    var satellite = L.tileLayer('https://server.arcgisonline.com/ArcGIS/rest/services/World_Imagery/MapServer/tile/{z}/{y}/{x}@2x');
 
     var baseLayers = {
       // 'Dark': dark,
-      'Gray': gray,
+      'Grayscale': grayscale,
       'Streets': streets,
       'Satellite': satellite
     }
@@ -133,21 +143,50 @@
     var mGroup = L.layerGroup().addTo(mymap);
     var wGroup = L.layerGroup().addTo(mymap);
     var mLayers, wLayers;
-    var chart, chart2;
+    var chart;
+    var heatmapFlag = false;
+
+    var mHeatmap = L.heatLayer([], {
+      radius: 60,
+      blur: 50,
+       gradient: {
+         0.45: "rgb(0,0,255)",
+         0.55: "rgb(0,255,255)",
+         0.65: "rgb(0,255,0)",
+         0.95: "rgb(255,255,0)",
+         1.0:  "rgb(255,0,0)"
+       }
+    }).addTo(mymap);;
+
+
+    var wHeatmap = L.heatLayer([], {
+      radius: 60,
+      blur:50,
+      gradient: {
+        0.45: "rgb(0,0,255)",
+        0.55: "rgb(0,255,255)",
+        0.65: "rgb(0,255,0)",
+        0.95: "rgb(255,255,0)",
+        1.0:  "rgb(255,0,0)"
+      }
+    }).addTo(mymap);;
+
 
     var zoningColors = chroma.scale('Set2').mode('lch').colors(11);
     var acsColors = chroma.scale('YlOrRd').colors(8);
 
 
     var overlays = {
-      "<span style='color: rgb(0,40,255)'>Men</span>": mGroup,
-      "<span style='color: rgb(255,0,255)'>Women</span>": wGroup,
+      "<i class='fas fa-circle fa-xs men'></i> <span style='color: rgb(0,40,255)'>Men</span>": mGroup,
+      "<i class='fas fa-circle fa-xs women'></i> <span style='color: rgb(255,0,255)'>Women</span>": wGroup,
       "<span>Place Names</span>": L.tileLayer('https://{s}.basemaps.cartocdn.com/light_only_labels/{z}/{x}/{y}{r}@2x.png').addTo(mymap)
     }
 
     L.control.layers(baseLayers, overlays, {
-      collapsed: false
+      collapsed: false,
+      position: 'bottomright'
     }).addTo(mymap);
+
 
 
     Promise.all([
@@ -168,190 +207,170 @@
 
       mLayers = {
         1965: L.geoJSON(datasets[0], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        }),
         1975: L.geoJSON(datasets[1], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        }),
         1983: L.geoJSON(datasets[2], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        }),
         1995: L.geoJSON(datasets[3], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        }),
         2005: L.geoJSON(datasets[4], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        }),
         2009: L.geoJSON(datasets[4], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        }),
         2012: L.geoJSON(datasets[4], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        }),
         2014: L.geoJSON(datasets[5], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs men glow-effect'})});
-        }})
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs men glow-effect'
+              })
+            });
+          }
+        })
       };
 
       wLayers = {
         1995: L.geoJSON(datasets[6], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs women glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs women glow-effect'
+              })
+            });
+          }
+        }),
         2005: L.geoJSON(datasets[7], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs women glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs women glow-effect'
+              })
+            });
+          }
+        }),
         2009: L.geoJSON(datasets[8], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs women glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs women glow-effect'
+              })
+            });
+          }
+        }),
         2012: L.geoJSON(datasets[9], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs women glow-effect'})});
-        }}),
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs women glow-effect'
+              })
+            });
+          }
+        }),
         2014: L.geoJSON(datasets[10], {
-          onEachFeature: function (feature, layer) {
-            layer.bindPopup("<h4>" + feature.properties.Name + "</h4>");
+          onEachFeature: function(feature, layer) {
+            layer.bindPopup("<p class='mapPopup'>" + feature.properties.Name + "</p>");
           },
-          pointToLayer: function (feature, latlng) {
-            return L.marker(latlng, {icon: L.divIcon({className: 'fas fa-circle fa-xs women glow-effect'})});
-        }})
+          pointToLayer: function(feature, latlng) {
+            return L.marker(latlng, {
+              icon: L.divIcon({
+                className: 'fas fa-circle fa-xs women glow-effect'
+              })
+            });
+          }
+        })
       };
 
-      mLayers[1965].addTo(mGroup);
+      mLayers[2012].addTo(mGroup);
+      wLayers[2012].addTo(wGroup);
 
 
-
-
-
-      // the charts
-
-      // var t = ["t"];
-      // var tss = ["Total Suspended Solids (mg/L)"];
-      // var tp = ["Total Phosphorus (mg/L)"];
-      // datasets[0].forEach(function(d) {
-      //   t.push(new Date(d["t"]))
-      //   tss.push(+d["tss"] / 1000.0)
-      //   tp.push((+d["tp"] / 10).toFixed(2))
-      // });
-
-
-      // chart = c3.generate({
-      //   size: {
-      //     width: 480
-      //   },
-      //   data: {
-      //     x: "t",
-      //     y: "tss",
-      //     y2: "tp",
-      //     columns: [t, tss, tp],
-      //     type: 'spline',
-      //     axes: {
-      //       tss: 'y',
-      //       tp: 'y2'
-      //     }
-      //   },
-      //   axis: {
-      //     x: {
-      //       type: "timeseries",
-      //       tick: {
-      //         format: "%b %Y",
-      //         fit: true,
-      //         culling: {
-      //           max: 6
-      //         }
-      //       }
-      //     },
-      //     y: {
-      //       label: {
-      //         text: 'Total Suspended Solids (g/L)',
-      //         position: 'outer-middle'
-      //       }
-      //     },
-      //     y2: {
-      //       show: true,
-      //       label: {
-      //         text: 'Total Phosphorus (mg/L)',
-      //         position: 'outer-middle'
-      //       },
-      //       max: .3,
-      //       min: 0
-      //     },
-      //   },
-      //   point: {
-      //     r: 0,
-      //     focus: {
-      //       expand: {
-      //         r: 2
-      //       }
-      //     }
-      //   },
-      //   zoom: {
-      //     // rescale: true,
-      //     enabled: false,
-      //     type: "scroll",
-      //     // onzoom: function(d) {
-      //     //   tt(d);
-      //     // }
-      //   },
-      //   tooltip: {
-      //     linked: true,
-      //   },
-      //   legend: {
-      //     position: 'inset',
-      //     inset: {
-      //       anchor: "top-right",
-      //       y: -10,
-      //     },
-      //   },
-      //   bindto: "#wq"
-      // });
-      //
 
       var t = ["t"];
       var mPop = ["# Men"];
@@ -364,7 +383,7 @@
       });
 
 
-      chart2 = c3.generate({
+      chart = c3.generate({
         size: {
           height: 80,
           width: 480
@@ -372,7 +391,7 @@
         data: {
           x: "t",
           columns: [t, mPop, wPop],
-          onmouseover: annualUpdate,
+          onmouseover: update,
           type: 'area',
           labels: false,
           colors: {
@@ -393,10 +412,10 @@
           show: false
         },
         point: {
-          r: 1,
+          r: 3,
           focus: {
             expand: {
-              r: 4
+              r: 10
             }
           }
         },
@@ -406,142 +425,139 @@
       $($($("#timeline-chart svg").children()[1]).children()[6]).hide();
 
 
+
+
+      mymap.on('overlayadd', function(eventlayer) {
+        if (eventlayer.layer == wGroup) {
+
+          chart.load({
+            columns: [wPop]
+
+          })
+
+        }
+
+        if (eventlayer.layer == mGroup) {
+          chart.load({
+            columns: [mPop]
+          })
+
+        }
+
+
+      });
+
+
+      mymap.on('overlayremove', function(eventlayer) {
+        if (eventlayer.layer == wGroup) {
+
+          chart.unload({
+            ids: ['# Women']
+          });
+
+        }
+
+        if (eventlayer.layer == mGroup) {
+
+          chart.unload({
+            ids: ['# Men']
+          });
+
+
+        }
+
+      });
+
+
+
     });
 
 
 
 
-    /////////////////////////
-    //
-    // function setColorZoning(zone) {
-    //   var id = 0;
-    //   if (zone == "FUD") {
-    //     id = 8;
-    //   } else if (zone == "COM") {
-    //     id = 9;
-    //   } else if (zone == "IND") {
-    //     id = 10;
-    //   } else if (zone == "MFR") {
-    //     id = 7;
-    //   } else if (zone == "MUE") {
-    //     id = 3;
-    //   } else if (zone == "MUR") {
-    //     id = 5;
-    //   } else if (zone == "PF") {
-    //     id = 4;
-    //   } else if (zone == "POS") {
-    //     id = 6;
-    //   } else if (zone == "RUR") {
-    //     id = 2;
-    //   } else if (zone == "SFR") {
-    //     id = 1;
-    //   } else {
-    //     id = 0;
-    //   }
-    //   return zoningColors[id];
-    // }
-    //
-    // function styleZoning(feature) {
-    //   return {
-    //     fillColor: setColorZoning(feature.properties.ZONEGEN_CL),
-    //     fillOpacity: 0.4,
-    //     weight: 0,
-    //     opacity: 1,
-    //     color: '#b4b4b4',
-    //     dashArray: '4'
-    //   };
-    // }
-    //
-    //
-    // function setColorACS(population) {
-    //   var id = 0;
-    //   if (population > 3500) {
-    //     id = 7;
-    //   } else if (population > 3000 && population <= 3500) {
-    //     id = 6;
-    //   } else if (population > 2500 && population <= 3000) {
-    //     id = 5;
-    //   } else if (population > 2000 && population <= 2500) {
-    //     id = 4;
-    //   } else if (population > 1500 && population <= 2000) {
-    //     id = 3;
-    //   } else if (population > 1000 && population <= 1500) {
-    //     id = 2;
-    //   } else if (population > 500 && population <= 1000) {
-    //     id = 1;
-    //   } else {
-    //     id = 0;
-    //   }
-    //   return acsColors[id];
-    // }
-    //
-    // // 7. Set style function that sets fill color.md property equal to cell tower density
-    // function styleACS(feature) {
-    //   return {
-    //     fillColor: setColorACS(feature.properties.totpop),
-    //     fillOpacity: 0.5,
-    //     weight: 1,
-    //     opacity: 1,
-    //     color: '#b4b4b4',
-    //     dashArray: '4'
-    //   };
-    // }
-    //
-    //
-    // function stream_style(feature) {
-    //   var w = 0.5;
-    //   if (feature.properties.StreamClas == "Perennial") {
-    //     w = 1;
-    //   } else {
-    //     w = 0.5;
-    //   }
-    //   return {
-    //     opacity: 0.4,
-    //     weight: w
-    //   };
-    // };
-    //
-    // function highlightFeature(e) {
-    //   var layer = e.target;
-    // }
-
-    ///////////////////////////////////
-
     $(".leaflet-control-attribution")
       .css("bottom", "60px")
+      .css("font-size", "14px")
       .css("background-color", "transparent")
-      .html("Supported by <a href='https://geography.washington.edu'> Geography @ University of Washington</a>")
-      .addClass("rainbow");
+      .html("<a class='rainbow' href='https://geography.washington.edu'>Supported by Geography @ University of Washington</a>");
 
 
-    function annualUpdate(d) {
-      // var currentDate = new Date(d.x.toString());
-      // var currentYear = currentDate.getFullYear() + 1;
+
+    $("#hmSwitcher input").on("click", function() {
+      if ($("#hmSwitcher input:checked").val() === "on") {
+        heatmapFlag = true;
+      } else {
+        heatmapFlag = false;
+      }
+    });
+
+
+
+
+
+
+    function update(d) {
       $("#year").text(d.x);
 
+      mGroup.clearLayers();
+      wGroup.clearLayers();
+      mHeatmap.setLatLngs([]);
+      wHeatmap.setLatLngs([]);
+      // mHeatmap.setOptions({
+      //   radius: 15,
+      //   blur: 20
+      // });
 
       if (mymap.hasLayer(mGroup)) {
-        mGroup.clearLayers();
-        mLayers[d.x].addTo(mGroup);
+        if (!heatmapFlag) {
+          mLayers[d.x].addTo(mGroup);
+        } else {
+        //  mHeatmap.setLatLngs([]);
+          $.each(mLayers[d.x]._layers, function(i, d) {
+            //console.log(i);
 
-        $.each(mLayers[d.x]._layers, function(i,feature){
-          a = 3;
-        })
+            mHeatmap.addLatLng(new L.latLng(d.feature.geometry.coordinates[1], d.feature.geometry.coordinates[0]));
+          });
+          // mHeatmap.addTo(mGroup);
+        }
 
-
-
-      } else {
-        mGroup.clearLayers();
       }
 
 
       if (mymap.hasLayer(wGroup)) {
-        wGroup.clearLayers();
+        // wGroup.clearLayers();
         if (d.x == 1965 || d.x == 1975 || d.x == 1983) {} else {
-          wLayers[d.x].addTo(wGroup);
+
+
+
+
+
+          if (!heatmapFlag) {
+            wLayers[d.x].addTo(wGroup);
+          } else {
+            $.each(wLayers[d.x]._layers, function(i, d) {
+              wHeatmap.addLatLng(new L.latLng(d.feature.geometry.coordinates[1], d.feature.geometry.coordinates[0]));
+            });
+          }
+
+
         }
-      } else {
-        wGroup.clearLayers();
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
+
       }
 
     }
