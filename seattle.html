@@ -105,8 +105,8 @@
 
     <div id="info" class="d-flex flex-column">
       <h4>Seattle <i class="showFrontPage fas fa-question-circle"></i></h4>
-      <p id="caseDesc"><img src="img/seattle2.png" align="left" style="width:70px; margin-right:10px"></img> This online map visualizes the spatial pattern and temporal changes of the LGBT related places in Seattle. The map was made by the data
-        digitalized from Damron's Travel Guide. The charts below was made by simulated datasets.
+      <p id="caseDesc"><img src="img/seattle2.png" align="left" style="width:70px; margin-right:10px"></img> This online map visualizes the spatial pattern and temporal changes of the LGBT related places in Seattle. The map was created and geo-referenced by the data
+        digitalized from Damron's Travel Guide, and the charts below was made by simulated datasets.
       </p>
       <div id="cloud"></div>
       <div id="fChart"></div>
@@ -674,15 +674,14 @@
         $("#hmLegend").parent().append("<span>more</span>");
         $("#hmLegend").parent().append("&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; <span>less</span>");
 
-        update({
-          x: +$("#year").text()
-        });
-
       } else {
         heatmapFlag = false;
         $("#hmLegendContainer").empty();
-
       }
+
+      update({
+        x: +$("#year").text()
+      });
 
     });
 
