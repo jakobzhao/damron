@@ -118,7 +118,7 @@
 
   <!-- Modal -->
   <div id="disclaimer" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
-    <div class="modal-dialog modal-dialog-centered modal-lg role="document"  style="width:1250px!important">
+    <div class="modal-dialog modal-dialog-centered" role="document"  style="width:1250px!important">
       <div class="modal-content">
         <div class="modal-header">
           <h5 class="modal-title" id="exampleModalLongTitle">Help</h5>
@@ -142,9 +142,7 @@
       </div>
     </div>
   </div>
-
   <script>
-    //  if ($("#hmSwitcher input:checked").val() === "on") {
 
     $(window).ready(function() {
       $('.loader').fadeOut("slow");
@@ -658,6 +656,7 @@
 
     $(".leaflet-control-attribution")
       .css("bottom", "60px")
+      .css("right", "120px")
       // .css("font-size", "14px")
       .css("background-color", "transparent")
       .html("<a class='rainbow' href='https://geography.washington.edu'>Supported by Geography @ University of Washington</a>");
