@@ -81,6 +81,7 @@
           <img src="img/logo.png" class="img-responsive" height="30"></img>
           <strong>&nbsp;&nbsp;Damron Guide</strong>
         </a>
+
         <button class="navbar-toggler" type="button" data-toggle="collapse" data-target="#navbarHeader" aria-controls="navbarHeader" aria-expanded="false" aria-label="Toggle navigation">
           <span class="navbar-toggler-icon"></span>
         </button>
@@ -103,11 +104,9 @@
     </div>
 
     <div id="info" class="d-flex flex-column">
-      <h4 class="rainbow">Seattle</h4>
-      <p id="caseDesc">How do changes in precipitation impact stream flow,
-        storage, and flooding in the Fanno Creek subbasin? This map visualizes
-        data including stream flow, precipitation, and flooding complaint calls
-        through interactive charts and map elements.
+      <h4>Seattle <i class="showFrontPage fas fa-question-circle"></i></h4>
+      <p id="caseDesc"><img src="img/seattle2.png" align="left" style="width:70px; margin-right:10px"></img> This online map visualizes the spatial pattern and temporal changes of the LGBT related places in Seattle. The map was made by the data
+        digitalized from Damron's Travel Guide. The charts below was made by simulated datasets.
       </p>
       <div id="cloud"></div>
       <div id="fChart"></div>
@@ -117,42 +116,71 @@
     <div id="map"></div>
   </main>
 
+  <!-- Modal -->
+  <div id="disclaimer" class="modal fade" tabindex="-1" role="dialog" aria-labelledby="exampleModalCenterTitle" aria-hidden="true">
+    <div class="modal-dialog modal-dialog-centered" role="document">
+      <div class="modal-content">
+        <div class="modal-header">
+          <h5 class="modal-title" id="exampleModalLongTitle">Help</h5>
+          <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+            <span aria-hidden="true">&times;</span>
+          </button>
+        </div>
+        <div class="modal-body">
+          bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla bla
+        </div>
+        <div class="modal-footer">
+          <div class="col-md-10">
+            <label id="nextTimeSwitcher" class="switch">
+              <input type="checkbox">
+              <span class="slider round"></span>
+            </label>
+            <span id="mapType">Don't show this info again.</span>
+          </div>
+          <button id="disclaimer-close" type="button" class="btn btn-primary col-md-2">close</button>
+        </div>
+      </div>
+    </div>
+  </div>
+
   <script>
-    // 1. heatmap
-    // 2. add data to chart.
+    //  if ($("#hmSwitcher input:checked").val() === "on") {
+
     $(window).ready(function() {
       $('.loader').fadeOut("slow");
+
+
+      $("#nextTimeSwitcher input").on("click", function() {
+        if ($("#nextTimeSwitcher input:checked").val() === "on") {
+          localStorage.setItem('popState', 'shown');
+        } else {
+
+          localStorage.setItem('popState', 'notShown');
+        }
+      })
+
+      if (localStorage.getItem('popState') != 'shown') {
+        console.log("show disclaimer");
+        $('#disclaimer').modal('show');
+
+      } else {
+        console.log("hide disclaimer");
+        $('#disclaimer').modal('hide');
+      }
+      $('#disclaimer-close').click(function(e) // You are clicking the close button
+        {
+          $('#disclaimer').fadeOut(); // Now the pop up is hiden.
+          $('#disclaimer').modal('hide');
+        });
     });
 
+    $(".showFrontPage").on("click", function() {
+      $('#disclaimer').modal('show');
+      localStorage.setItem('popState', 'notShown');
+    })
 
 
-    function wordFrequency(txt, freq) {
 
-    	// a regular expression to define the symbols to seperate the words
-        var wordArray = txt.split(/[ .?!,*'"”“]/);
-        //var wordArray = txt.split(" ");
-        var newArray = [], filteredArray = [], wordObj;
-    	// calculate the frequency of each unique terms from the text.
-        wordArray.forEach(function (word) {
-            wordObj = newArray.filter(function (w){
-                return w.text == word.toLowerCase();
-            });
-            if (wordObj.length) {
-                wordObj[0].weight += 1;
-            } else {
-                newArray.push({text: word, weight: 1});
-            }
-        });
-
-        var words = ["", "that", "this", "we", "needs", "I", "you", "he", "she", "and", "be", "are", "is", "was", "were", "Could", "Would", "of", "it", "with", "A", "s", "t", "with", "of", "to", "the", "for", "in", "not", ",", ")", "&", "our", "more", "people", "at", "We", "_", "our", "so", "throughout", "5", "maybe", "if", "use", "by", "as", "all", "4", "survey", "The", "on", "a", "on", "lots", "The", "-", "All", "but", "can", "up", "or", "need", "like", "will", "should", "way", "its", "do", "make", "between", "null", "many", "/", "want", "what", "It", "an", "g", "It", "don", "re", "think", "30", "lot", "about", "m", "re", "get", "good", "must",  "-", "them", "had", "take", "out", "etc", "has", "would", "20", "no", "_", "around", "how", "In", "city", '"',"“", "”", "am", "i", "they", "from", "I've", "his", "who", "my", "one", "23", "don't", "W", "C", "10", "than", "their", "me", "have", "into", "other", "only", "when", "because", "rather", "being", "then", "himself", "him", "don’t", "own", "two", "may", "group", "which", "just", "same", "there", "too", "also", "less", "asks", "let", "itself", "day", "example", "another", "say", "myself", "cannot", "self", "bad", "such", "part", "after", "much", "does", "both", "very", "come", "new", "very", "often", "end", "isn’t", "some", "much", "said", "your"];
-    	//disinclude the word larger than the lowerst frequency as well as not in the commonly used terms.
-        newArray.filter(function(word){
-            if (!words.includes(word.text) && word.weight > freq) {
-                filteredArray.push(word);
-            }
-        });
-        return filteredArray;
-    }
 
     var mymap = L.map('map', {
       center: [47.609, -122.342],
@@ -510,8 +538,8 @@
           x: 'x',
           columns: [
             ['x', 'Restaurants', 'Bar', 'Accommodation', 'Erotica', 'Cruisy Area'],
-            ['Men', 15, 13,  15, 30, 20],
-            ['Women', 30, 12, 20,  20, 14],
+            ['Men', 15, 13, 15, 30, 20],
+            ['Women', 30, 12, 20, 20, 14],
           ],
           groups: [
             ['Men', 'Women']
@@ -628,8 +656,6 @@
 
 
 
-
-
     $(".leaflet-control-attribution")
       .css("bottom", "60px")
       // .css("font-size", "14px")
@@ -648,36 +674,28 @@
         $("#hmLegend").parent().append("<span>more</span>");
         $("#hmLegend").parent().append("&nbsp; &nbsp;&nbsp;&nbsp; &nbsp;&nbsp;&nbsp; &nbsp; &nbsp;&nbsp; &nbsp;&nbsp; &nbsp; &nbsp;&nbsp; <span>less</span>");
 
+        update({
+          x: +$("#year").text()
+        });
+
       } else {
         heatmapFlag = false;
         $("#hmLegendContainer").empty();
 
       }
+
     });
 
 
     function update(d) {
       $("#year").text(d.x);
 
-      // $("#cloud").jQCloud([], {
-      //   colors: colorscheme,
-      //   autoResize: true,
-      //   delay:5,
-      //   shape: 'rectangular',
-      //   fontSize: {
-      //     from: 0.06,
-      //     to: 0.01
-      //   }
-      // });
-
-
-
       mGroup.clearLayers();
       wGroup.clearLayers();
       mHeatmap.setLatLngs([]);
       wHeatmap.setLatLngs([]);
 
-      // var texts = "";
+
 
       if (mymap.hasLayer(mGroup)) {
         if (!heatmapFlag) {
@@ -689,9 +707,7 @@
         }
 
 
-        // $.each(mLayers[d.x]._layers, function(i, d) {
-        //   texts += d.feature.properties.Name + " ";
-        // });
+
 
         fChart.load({
           columns: [
@@ -713,7 +729,7 @@
 
 
       if (mymap.hasLayer(wGroup)) {
-        // wGroup.clearLayers();
+
         if (d.x == 1965 || d.x == 1975 || d.x == 1983) {
           fChart.load({
             columns: [
@@ -737,9 +753,7 @@
             });
           }
 
-          // $.each(wLayers[d.x]._layers, function(i, d) {
-          //   texts += d.feature.properties.Name + " ";
-          // });
+
           fChart.load({
             columns: [
               ["Women", Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1, Math.floor(Math.random() * 40) + 1]
@@ -759,19 +773,7 @@
       }
 
 
-      // var  frequencyList = wordFrequency(texts, 3);
-      //
-      //
-      // $("#cloud").jQCloud(frequencyList, {
-      //   colors: colorscheme,
-      //   autoResize: true,
-      //   delay:5,
-      //   shape: 'rectangular',
-      //   fontSize: {
-      //     from: 0.06,
-      //     to: 0.01
-      //   }
-      // });
+
 
 
     }
